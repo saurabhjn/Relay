@@ -21,9 +21,11 @@ class UnreadMessageService : Service() {
         const val ACTION_SEND_SPECIFIC = "ACTION_SEND_SPECIFIC"
     }
 
-    private val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json()
+    private val client by lazy {
+        HttpClient(CIO) {
+            install(ContentNegotiation) {
+                json()
+            }
         }
     }
 
@@ -41,6 +43,11 @@ class UnreadMessageService : Service() {
         }
 
         return START_NOT_STICKY
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        client.close()
     }
 
     private suspend fun sendSpecificMessages(messageIds: LongArray) {

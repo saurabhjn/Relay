@@ -17,9 +17,11 @@ import kotlinx.coroutines.launch
 
 class ApiForwardingService : Service() {
 
-    private val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json()
+    private val client by lazy {
+        HttpClient(CIO) {
+            install(ContentNegotiation) {
+                json()
+            }
         }
     }
 
@@ -42,11 +44,18 @@ class ApiForwardingService : Service() {
                     LogRepository.addLogMessage("✅")
                 } catch (e: Exception) {
                     LogRepository.addLogMessage("Error forwarding SMS: ${e.message}")
+                } finally {
+                    stopSelf(startId)
                 }
             }
         }
 
         return START_NOT_STICKY
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        client.close()
     }
 
     override fun onBind(intent: Intent?): IBinder? {

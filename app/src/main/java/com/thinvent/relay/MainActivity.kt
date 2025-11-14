@@ -71,8 +71,7 @@ class MainActivity : ComponentActivity() {
 
         val permissionsToRequest = mutableListOf(
             Manifest.permission.RECEIVE_SMS,
-            Manifest.permission.READ_SMS,
-            "android.permission.WRITE_SMS"
+            Manifest.permission.READ_SMS
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
