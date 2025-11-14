@@ -46,12 +46,12 @@ class ApiForwardingService : Service() {
                     val url = ServerRepository.currentUrl.first()
                     val threadId = Telephony.Threads.getOrCreateThreadId(this@ApiForwardingService, originatingAddress)
 
-                    LogRepository.addLogMessage("Forwarding SMS. Sender ID: '$originatingAddress' to $url")
+                    LogRepository.addLogMessage("Forwarding to $url")
                     client.post(url) {
                         contentType(ContentType.Application.Json)
                         setBody(SmsData(originatingAddress, messageBody, timestamp, threadId))
                     }
-                    LogRepository.addLogMessage("SMS from '$originatingAddress' forwarded successfully")
+                    LogRepository.addLogMessage("Success")
                 } catch (e: Exception) {
                     LogRepository.addLogMessage("Error forwarding SMS: ${e.message}")
                 }

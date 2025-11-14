@@ -97,7 +97,7 @@ class UnreadMessageService : Service() {
                     }
 
                     if (response.status == HttpStatusCode.OK) {
-                        LogRepository.addLogMessage("Successfully sent message from '$address'.")
+                        LogRepository.addLogMessage("Success")
                         ProcessedMessagesRepository.addProcessedMessage(this@UnreadMessageService, messageId)
                     } else {
                         LogRepository.addLogMessage("API call failed for '$address' with status: ${response.status}")
