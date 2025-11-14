@@ -1,7 +1,6 @@
 package com.thinvent.relay
 
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.provider.Telephony
@@ -15,21 +14,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.security.cert.X509Certificate
-import javax.net.ssl.X509TrustManager
 
 class ApiForwardingService : Service() {
 
     private val client = HttpClient(CIO) {
-        engine {
-            https {
-                trustManager = object : X509TrustManager {
-                    override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {}
-                    override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {}
-                    override fun getAcceptedIssuers(): Array<X509Certificate>? = null
-                }
-            }
-        }
         install(ContentNegotiation) {
             json()
         }
@@ -46,12 +34,12 @@ class ApiForwardingService : Service() {
                     val url = ServerRepository.currentUrl.first()
                     val threadId = Telephony.Threads.getOrCreateThreadId(this@ApiForwardingService, originatingAddress)
 
-                    LogRepository.addLogMessage("Forwarding to $url")
+                    LogRepository.addLogMessage("↗ to $url.")
                     client.post(url) {
                         contentType(ContentType.Application.Json)
                         setBody(SmsData(originatingAddress, messageBody, timestamp, threadId))
                     }
-                    LogRepository.addLogMessage("Success")
+                    LogRepository.addLogMessage("✅")
                 } catch (e: Exception) {
                     LogRepository.addLogMessage("Error forwarding SMS: ${e.message}")
                 }

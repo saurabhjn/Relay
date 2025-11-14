@@ -8,15 +8,12 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.security.cert.X509Certificate
-import javax.net.ssl.X509TrustManager
 
 class UnreadMessageService : Service() {
 
@@ -25,15 +22,6 @@ class UnreadMessageService : Service() {
     }
 
     private val client = HttpClient(CIO) {
-        engine {
-            https {
-                trustManager = object : X509TrustManager {
-                    override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {}
-                    override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {}
-                    override fun getAcceptedIssuers(): Array<X509Certificate>? = null
-                }
-            }
-        }
         install(ContentNegotiation) {
             json()
         }

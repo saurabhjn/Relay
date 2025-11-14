@@ -2,6 +2,7 @@ package com.thinvent.relay
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,11 +20,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -38,7 +41,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -67,11 +69,14 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val permissionsToRequest = arrayOf(
+        val permissionsToRequest = mutableListOf(
             Manifest.permission.RECEIVE_SMS,
             Manifest.permission.READ_SMS,
             "android.permission.WRITE_SMS"
         )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
 
         val permissionsNotGranted = permissionsToRequest.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
@@ -89,13 +94,11 @@ fun MainScreen(modifier: Modifier = Modifier, logViewModel: LogViewModel = viewM
     val selectableSmsList by logViewModel.selectableSmsList.collectAsState()
     val currentServerUrl by logViewModel.currentUrl.collectAsState()
     val context = LocalContext.current
-    val logListState = rememberLazyListState()
+    val logScrollState = rememberScrollState()
 
-    // Auto-scroll for the simple text log
+    // Auto-scroll the log view to the bottom
     LaunchedEffect(logMessages.size) {
-        if (logMessages.isNotEmpty()) {
-            logListState.animateScrollToItem(logMessages.size - 1)
-        }
+        logScrollState.animateScrollTo(logScrollState.maxValue)
     }
 
     Column(modifier = modifier.padding(8.dp)) {
@@ -117,7 +120,7 @@ fun MainScreen(modifier: Modifier = Modifier, logViewModel: LogViewModel = viewM
 
             OutlinedButton(onClick = { logViewModel.sendTestMessage(context) }, modifier = Modifier.weight(1f)) {
                 Icon(
-                    Icons.Default.Send,
+                    Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Send Test Message",
                     modifier = Modifier.size(ButtonDefaults.IconSize)
                 )
@@ -132,7 +135,7 @@ fun MainScreen(modifier: Modifier = Modifier, logViewModel: LogViewModel = viewM
                 Icon(Icons.Default.Refresh, contentDescription = "Load Messages")
             }
             OutlinedButton(onClick = { logViewModel.sendSelectedMessages(context) }, modifier = Modifier.weight(1f)) {
-                Icon(Icons.Default.Send, contentDescription = "Send Selected")
+                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send Selected")
             }
             OutlinedButton(onClick = { logViewModel.clearProcessedMessages(context) }, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Default.Delete, contentDescription = "Clear History")
@@ -159,18 +162,16 @@ fun MainScreen(modifier: Modifier = Modifier, logViewModel: LogViewModel = viewM
         }
 
         // Simple Log View
-        LazyColumn(
-            state = logListState,
+        Box(
             modifier = Modifier
                 .weight(1f) // Less space for this list
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
                 .border(1.dp, MaterialTheme.colorScheme.outline)
                 .padding(8.dp)
+                .verticalScroll(logScrollState)
         ) {
-            items(logMessages) {
-                Text(text = it, style = MaterialTheme.typography.bodySmall)
-            }
+            Text(text = logMessages.joinToString(" "), style = MaterialTheme.typography.bodySmall)
         }
     }
 }

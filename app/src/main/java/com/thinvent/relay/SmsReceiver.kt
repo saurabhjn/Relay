@@ -19,7 +19,7 @@ class SmsReceiver : BroadcastReceiver() {
 
             if (messageBody.isNotEmpty() && originatingAddress != null) {
                 CoroutineScope(Dispatchers.IO).launch {
-                    LogRepository.addLogMessage("\nSMS from '$originatingAddress'")
+                    LogRepository.addLogMessage("\n\uD83D\uDCAC from '$originatingAddress'.")
                 }
                 val serviceIntent = Intent(context, ApiForwardingService::class.java).apply {
                     putExtra("messageBody", messageBody)
