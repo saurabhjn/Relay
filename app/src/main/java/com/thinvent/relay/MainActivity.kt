@@ -70,8 +70,7 @@ class MainActivity : ComponentActivity() {
         val permissionsToRequest = arrayOf(
             Manifest.permission.RECEIVE_SMS,
             Manifest.permission.READ_SMS,
-            "android.permission.WRITE_SMS",
-            Manifest.permission.RECEIVE_MMS
+            "android.permission.WRITE_SMS"
         )
 
         val permissionsNotGranted = permissionsToRequest.filter {
