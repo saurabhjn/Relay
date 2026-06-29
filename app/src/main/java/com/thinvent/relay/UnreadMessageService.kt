@@ -88,6 +88,9 @@ class UnreadMessageService : Service() {
                 try {
                     val response = client.post(url) {
                         contentType(ContentType.Application.Json)
+                        if (ServerRepository.API_KEY.isNotEmpty()) {
+                            header("X-API-Key", ServerRepository.API_KEY)
+                        }
                         setBody(SmsData(address, body, timestamp, threadId))
                     }
 

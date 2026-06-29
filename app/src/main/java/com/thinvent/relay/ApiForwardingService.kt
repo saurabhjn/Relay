@@ -39,6 +39,9 @@ class ApiForwardingService : Service() {
                     LogRepository.addLogMessage("↗ to $url.")
                     client.post(url) {
                         contentType(ContentType.Application.Json)
+                        if (ServerRepository.API_KEY.isNotEmpty()) {
+                            header("X-API-Key", ServerRepository.API_KEY)
+                        }
                         setBody(SmsData(originatingAddress, messageBody, timestamp, threadId))
                     }
                     LogRepository.addLogMessage("✅")

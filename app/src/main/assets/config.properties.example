@@ -6,3 +6,8 @@ prod.url=https://your-production-server.com/api/relay
 
 # Development server URL
 dev.url=https://your-development-server.com:5000/api/relay
+
+# Shared secret sent as the X-API-Key header on every forward. Must match the
+# server's WEBHOOK_API_KEY (from /etc/manage_config.json). Without it the
+# server rejects the SMS with HTTP 401.
+api.key=your-webhook-api-key
