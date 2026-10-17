@@ -44,14 +44,12 @@ class LogViewModel : ViewModel() {
         }
     }
 
-    fun setServerToProd() = ServerRepository.setServerToProd()
-    fun setServerToDev() = ServerRepository.setServerToDev()
-
     fun sendTestMessage(context: Context) {
         val serviceIntent = Intent(context, ApiForwardingService::class.java).apply {
             putExtra("messageBody", "This is a test message")
             putExtra("originatingAddress", "1234567890")
             putExtra("timestamp", System.currentTimeMillis())
+            putExtra("isTest", true) // Test bypasses the keep/drop filter.
         }
         context.startService(serviceIntent)
     }
@@ -86,6 +84,7 @@ class LogViewModel : ViewModel() {
             LogRepository.addLogMessage("Loading messages from the last 48 hours...")
             val smsList = mutableListOf<SelectableSms>()
             withContext(Dispatchers.IO) {
+              try {
                 val fortyEightHoursAgo = System.currentTimeMillis() - (48 * 60 * 60 * 1000)
                 context.contentResolver.query(
                     Telephony.Sms.Inbox.CONTENT_URI,
@@ -127,6 +126,9 @@ class LogViewModel : ViewModel() {
                     }
                 }
                 LogRepository.addLogMessage("Found ${smsList.size} messages.")
+              } catch (e: Exception) {
+                LogRepository.addLogMessage("Could not read SMS (is SMS permission granted?): ${e.message}")
+              }
             }
             _selectableSmsList.value = smsList
         }

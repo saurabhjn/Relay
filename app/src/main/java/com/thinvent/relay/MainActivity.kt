@@ -91,7 +91,6 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(modifier: Modifier = Modifier, logViewModel: LogViewModel = viewModel()) {
     val logMessages by logViewModel.logMessages.collectAsState()
     val selectableSmsList by logViewModel.selectableSmsList.collectAsState()
-    val currentServerUrl by logViewModel.currentUrl.collectAsState()
     val context = LocalContext.current
     val logScrollState = rememberScrollState()
 
@@ -101,23 +100,9 @@ fun MainScreen(modifier: Modifier = Modifier, logViewModel: LogViewModel = viewM
     }
 
     Column(modifier = modifier.padding(8.dp)) {
-        // Server and Test Controls
+        // Test control (the Prod/Dev server toggle was removed — always Prod).
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            val isProd = currentServerUrl == ServerRepository.PROD_URL
-
-            if (isProd) {
-                Button(onClick = {}, modifier = Modifier.weight(1f)) { Text("Prod") }
-            } else {
-                OutlinedButton(onClick = { logViewModel.setServerToProd() }, modifier = Modifier.weight(1f)) { Text("Prod") }
-            }
-
-            if (!isProd) {
-                Button(onClick = {}, modifier = Modifier.weight(1f)) { Text("Dev") }
-            } else {
-                OutlinedButton(onClick = { logViewModel.setServerToDev() }, modifier = Modifier.weight(1f)) { Text("Dev") }
-            }
-
-            OutlinedButton(onClick = { logViewModel.sendTestMessage(context) }, modifier = Modifier.weight(1f)) {
+            OutlinedButton(onClick = { logViewModel.sendTestMessage(context) }, modifier = Modifier.fillMaxWidth()) {
                 Icon(
                     Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Send Test Message",

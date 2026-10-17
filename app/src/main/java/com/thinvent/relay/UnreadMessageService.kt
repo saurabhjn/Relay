@@ -4,70 +4,48 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.provider.Telephony
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+/**
+ * Bulk backfill: sends the specific messages selected in the UI. Each one goes
+ * through RelaySender, which filters (skips unwanted), throttles (no 429s),
+ * marks read and records it as processed.
+ */
 class UnreadMessageService : Service() {
 
     companion object {
         const val ACTION_SEND_SPECIFIC = "ACTION_SEND_SPECIFIC"
     }
 
-    private val client by lazy {
-        HttpClient(CIO) {
-            install(ContentNegotiation) {
-                json()
-            }
-        }
-    }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.getStringExtra("action")
-
         if (action == ACTION_SEND_SPECIFIC) {
             val messageIds = intent.getLongArrayExtra("messageIds")
             if (messageIds != null && messageIds.isNotEmpty()) {
                 CoroutineScope(Dispatchers.IO).launch {
-                    sendSpecificMessages(messageIds)
-                    stopSelf()
+                    try {
+                        sendSpecificMessages(messageIds)
+                    } catch (e: Exception) {
+                        LogRepository.addLogMessage("Batch send failed: ${e.message}")
+                    } finally {
+                        stopSelf()
+                    }
                 }
             }
         }
-
         return START_NOT_STICKY
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        client.close()
-    }
-
     private suspend fun sendSpecificMessages(messageIds: LongArray) {
-        val url = ServerRepository.currentUrl.first()
-
-        // Create a selection string for the query, e.g., "_id IN (?, ?, ?)"
         val selection = "${Telephony.Sms._ID} IN (${messageIds.joinToString(",") { "?" }})"
         val selectionArgs = messageIds.map { it.toString() }.toTypedArray()
 
-        val cursor = contentResolver.query(
-            Telephony.Sms.Inbox.CONTENT_URI,
-            null,
-            selection,
-            selectionArgs,
-            null
-        )
-
-        cursor?.use {
-            LogRepository.addLogMessage("Processing ${it.count} selected messages.")
-
+        contentResolver.query(
+            Telephony.Sms.Inbox.CONTENT_URI, null, selection, selectionArgs, null
+        )?.use {
+            LogRepository.addLogMessage("Processing ${it.count} selected messages...")
             val idColumn = it.getColumnIndex(Telephony.Sms._ID)
             val addressColumn = it.getColumnIndex(Telephony.Sms.ADDRESS)
             val bodyColumn = it.getColumnIndex(Telephony.Sms.BODY)
@@ -78,36 +56,20 @@ class UnreadMessageService : Service() {
                 val messageId = it.getLong(idColumn)
                 val address = it.getString(addressColumn)
                 val body = it.getString(bodyColumn)
-
                 if (address.isNullOrEmpty() || body.isNullOrEmpty()) continue
 
-                val timestamp = it.getLong(dateColumn)
-                val threadId = it.getLong(threadIdColumn)
-
-                LogRepository.addLogMessage("Sending message from '$address'...")
-                try {
-                    val response = client.post(url) {
-                        contentType(ContentType.Application.Json)
-                        if (ServerRepository.API_KEY.isNotEmpty()) {
-                            header("X-API-Key", ServerRepository.API_KEY)
-                        }
-                        setBody(SmsData(address, body, timestamp, threadId))
-                    }
-
-                    if (response.status == HttpStatusCode.OK) {
-                        LogRepository.addLogMessage("Success")
-                        ProcessedMessagesRepository.addProcessedMessage(this@UnreadMessageService, messageId)
-                    } else {
-                        LogRepository.addLogMessage("API call failed for '$address' with status: ${response.status}")
-                    }
-                } catch (e: Exception) {
-                    LogRepository.addLogMessage("Error sending message from '$address': ${e.message}")
-                }
+                RelaySender.send(
+                    context = this@UnreadMessageService,
+                    from = address,
+                    body = body,
+                    timestamp = it.getLong(dateColumn),
+                    threadId = it.getLong(threadIdColumn),
+                    smsId = messageId
+                )
             }
-        } ?: LogRepository.addLogMessage("Could not query SMS content provider for selected messages.")
+            LogRepository.addLogMessage("Finished the selected batch.")
+        } ?: LogRepository.addLogMessage("Could not read the selected messages.")
     }
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
-    }
+    override fun onBind(intent: Intent?): IBinder? = null
 }

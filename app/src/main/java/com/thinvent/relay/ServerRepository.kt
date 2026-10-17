@@ -12,6 +12,10 @@ object ServerRepository {
     // via the `api.key` property in assets/config.properties.
     val API_KEY: String
 
+    // Authenticated endpoint the app fetches its keep/drop rules from. Defaults
+    // to the prod relay URL + "/rules" (e.g. https://.../api/relay/rules).
+    val RULES_URL: String
+
     private val _currentUrl: MutableStateFlow<String>
 
     init {
@@ -19,6 +23,7 @@ object ServerRepository {
         PROD_URL = properties.getProperty("prod.url", "https://fallback.prod.url/api/relay")
         DEV_URL = properties.getProperty("dev.url", "https://fallback.dev.url/api/relay")
         API_KEY = properties.getProperty("api.key", "")
+        RULES_URL = properties.getProperty("rules.url", "$PROD_URL/rules")
         _currentUrl = MutableStateFlow(PROD_URL)
     }
 

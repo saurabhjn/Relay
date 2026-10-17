@@ -8,13 +8,13 @@ plugins {
 android {
     namespace = "com.thinvent.relay"
     compileSdk {
-        version = release(36)
+        version = release(34)
     }
 
     defaultConfig {
         applicationId = "com.thinvent.relay"
-        minSdk = 35
-        targetSdk = 36
+        minSdk = 34
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
