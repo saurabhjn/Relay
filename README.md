@@ -48,3 +48,15 @@ To create a shareable `.apk` file that can be installed on other phones:
 5.  After creating the key, select the **release** build variant and click **Finish**.
 6.  Android Studio will build the signed APK. When it's done, a notification will appear. Click the **locate** link to find the `app-release.apk` file in the `app/release` folder.
 7.  You can copy this `.apk` file to another phone to install it. You may need to enable "Install from unknown sources" in the phone's security settings.
+
+## Configuration file
+
+The app reads a gitignored `app/src/main/assets/config.properties`:
+
+```
+prod.url=https://manage.thinvent.in/api/relay
+dev.url=https://manage.thinvent.in/api/relay
+api.key=<manage's WEBHOOK_API_KEY>
+```
+
+api.key is the WEBHOOK_API_KEY of manage's secrets file (manage_config.json on the manage server).
